@@ -4,6 +4,7 @@ import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 import org.hibernate.engine.jdbc.spi.ResultSetReturn;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -12,25 +13,26 @@ import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
     Util util = new Util();
+
     public UserDaoJDBCImpl() {
 
     }
 
     public void createUsersTable() {
-        String SQL = "CREATE TABLE User(id int increment," +
+        String SQL = "CREATE TABLE IF NOT EXISTS user.User (id int primary key auto_increment," +
                 " name varchar(55)," +
                 " lastName varchar(55)," +
                 " age int);";
         try {
             Statement statement = util.getConnection().createStatement();
-            statement.executeQuery(SQL);
+            statement.executeUpdate(SQL);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public void dropUsersTable() {
-        String SQL = "DROP TABLE User;";
+        String SQL = "DROP TABLE IF EXISTS user.User;";
         try {
             Statement statement = util.getConnection().createStatement();
             statement.executeUpdate(SQL);
@@ -41,28 +43,50 @@ public class UserDaoJDBCImpl implements UserDao {
 
     public void saveUser(String name, String lastName, byte age) {
         try {
-            String SQL = "INSERT INTO User VALUES(name, lastName, age);";
-            Statement statement = util.getConnection().createStatement();
-            statement.executeUpdate(SQL);
+            String SQL = "INSERT INTO user.User (name, lastName, age) VALUES(?, ?, ?);";
+            PreparedStatement preparedStatement = util.getConnection().prepareStatement(SQL);
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setInt(3, age);
+            preparedStatement.executeUpdate();
+            System.out.println(name + " added to bd");
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public void removeUserById(long id) {
+//        User user1 = null;
         try {
-            String SQL = "SELECT * FROM User WHERE id = id;";
-            Statement statement = util.getConnection().createStatement();
-            statement.executeQuery(SQL);
+            String SQL = "DELETE FROM user.User WHERE id = ?;";
+            PreparedStatement preparedStatement = util.getConnection().prepareStatement(SQL);
+            preparedStatement.setLong(1, id);
+//            ResultSet resultSet = preparedStatement.executeQuery();
+//            resultSet.next();
+//            user1 = new User();
+//
+//            user1.setId(resultSet.getLong("id"));
+//            user1.setName(resultSet.getString("name"));
+//            user1.setLastName(resultSet.getString("lastName"));
+//            user1.setAge(resultSet.getByte("age"));
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
+//        try {
+//            String SQL = "SELECT * FROM User WHERE id = id;";
+//            Statement statement = util.getConnection().createStatement();
+//            statement.executeQuery(SQL);
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        }
     }
 
     public List<User> getAllUsers() {
         List<User> users = new ArrayList<>();
         try {
-            String SQL = "SELECT * FROM User;";
+            String SQL = "SELECT * FROM user.User;";
             Statement statement = util.getConnection().createStatement();
             ResultSet resultSet = statement.executeQuery(SQL);
 
@@ -72,6 +96,7 @@ public class UserDaoJDBCImpl implements UserDao {
                 user.setName(resultSet.getString("name"));
                 user.setLastName(resultSet.getString("lastName"));
                 user.setAge(resultSet.getByte("age"));
+                users.add(user);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -80,7 +105,7 @@ public class UserDaoJDBCImpl implements UserDao {
     }
 
     public void cleanUsersTable() {
-        String SQL = "TRUNCATE TABLE User;";
+        String SQL = "TRUNCATE TABLE user.User;";
         try {
             Statement statement = util.getConnection().createStatement();
             statement.executeUpdate(SQL);
