@@ -128,12 +128,22 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void cleanUsersTable() {
         Session session = getSessionFactory().openSession();
-        Transaction transaction = session.beginTransaction();
-        session.createQuery("DELETE FROM User").executeUpdate();
-        //session.clear();
-        System.out.println("table was clear()");
+        Transaction transaction = null;
+        try {
+            transaction = session.beginTransaction();
+            session.createQuery("DELETE FROM User").executeUpdate();
+            System.out.println("table was clear()");
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
 
-        transaction.commit();
-        session.close();
+
+
     }
 }
